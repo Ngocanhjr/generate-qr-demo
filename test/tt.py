@@ -1,38 +1,67 @@
-from tkinter import *
+from tkinter import Tk, Label, Entry, Button, StringVar
+from tkinter import ttk
+from tkinter import messagebox
 import pyqrcode
 from PIL import ImageTk, Image
-
-root = Tk()
+import os
 
 def generate():
-    link_name = name_entry.get()
-    link = link_entry.get()
+    link_name = name_var.get().strip()
+    link = link_var.get().strip()
+
+    if not link_name or not link:
+        messagebox.showwarning("Missing Info", "Please fill in both fields.")
+        return
+
     file_name = link_name + ".png"
-    url = pyqrcode.create(link)
-    url.png(file_name, scale=8)
-    image = ImageTk.PhotoImage(Image.open(file_name))
-    image_label = Label(image=image)
-    image_label.image = image
-    canvas.create_window(200, 250, window=image_label)
+    try:
+        qr = pyqrcode.create(link)
+        qr.png(file_name, scale=8)
 
-canvas = Canvas(root, width=400, height=600)
-canvas.pack()
+        img = Image.open(file_name)
+        img = img.resize((200, 200))  # resize for UI
+        img_tk = ImageTk.PhotoImage(img)
 
-app_label = Label(root, text="QR Code Generator",
-                  fg='blue', font=("Arial", 30))
-canvas.create_window(200, 50, window=app_label)
+        qr_label.config(image=img_tk)
+        qr_label.image = img_tk
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to generate QR: {e}")
 
-name_label = Label(root, text="Link name")
-link_label = Label(root, text="Link")
-canvas.create_window(200, 100, window=name_label)
-canvas.create_window(200, 160, window=link_label)
+# --- Main UI ---
+root = Tk()
+root.title("QR Code Generator")
+root.geometry("400x500")
+root.resizable(False, False)
 
-name_entry = Entry(root)
-link_entry = Entry(root)
-canvas.create_window(200, 130, window=name_entry)
-canvas.create_window(200, 180, window=link_entry)
+# Optional: Set icon
+# root.iconbitmap('icon.ico')  # Add your icon here
 
-button = Button(text="Generate QR code", command=generate)
-canvas.create_window(200, 230, window=button)
+# Styling
+style = ttk.Style()
+style.configure("TLabel", font=("Segoe UI", 12))
+style.configure("TEntry", font=("Segoe UI", 12))
+style.configure("TButton", font=("Segoe UI", 12))
 
+# Variables
+name_var = StringVar()
+link_var = StringVar()
+
+# Layout
+ttk.Label(root, text="QR Code Generator", font=("Segoe UI", 18, "bold"), foreground="blue").pack(pady=(20, 10))
+
+frame = ttk.Frame(root, padding=20)
+frame.pack()
+
+ttk.Label(frame, text="Link name:").grid(row=0, column=0, sticky="w")
+ttk.Entry(frame, textvariable=name_var, width=30).grid(row=1, column=0, pady=(0, 10))
+
+ttk.Label(frame, text="Link:").grid(row=2, column=0, sticky="w")
+ttk.Entry(frame, textvariable=link_var, width=30).grid(row=3, column=0, pady=(0, 20))
+
+ttk.Button(frame, text="Generate QR Code", command=generate).grid(row=4, column=0, pady=10)
+
+qr_label = ttk.Label(root)
+qr_label.pack(pady=10)
+
+# --- Start UI ---
 root.mainloop()
